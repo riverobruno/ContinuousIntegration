@@ -1,3 +1,5 @@
 
-defensa=input("¿cómo es la defensa de Boca el próximo partido?")
-print("bien ahí")
+defensa=["Blanco", "Rojo", "Costa", "Blondel"]
+print("bien ahí, entonces serán:")
+for nombre in defensa:
+    print(nombre)
