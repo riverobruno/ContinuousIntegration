@@ -1,6 +1,7 @@
 from elarchivo import defensa
 
-def test_ladefensa():
+def test_cantidad():
     assert len(defensa) == 4
 def test_fabra():
-    assert "fabra" not in defensa
+    for jugador in defensa:
+        assert "fabra" not in jugador.lower()
