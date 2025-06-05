@@ -6,6 +6,7 @@ authors = [ {name = "Bruno Sebastian Rivero"}]
 requires-python = ">=3.10"
 [tool.poetry.dependencies]
 pytest = "^8.4.0"
+tox = "^4.26.0"
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

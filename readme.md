@@ -1,0 +1,2 @@
+Muestra simple de CI/CD en Python que incluye build local con tests unitarios automáticos utilizando Poetry, tox y pytest. 
+Dicha build local la disparás con "poetry run tox" suponiendo un previo "poetry install". 
