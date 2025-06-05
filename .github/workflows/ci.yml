@@ -20,9 +20,7 @@ jobs:
       with:
         python-version: "3.13"
     - name: Instalar Poetry
-      run: |
-        py -m pip install --upgrade pipx
-        pipx install poetry
+      run: pip install poetry
 
     - name: Test y build con Poetry en tox
       run: tox
