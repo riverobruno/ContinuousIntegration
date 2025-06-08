@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: descargar el binario
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v4 #recibe el wheel desde el otro trabajo
       with:
         name: python-package
         
