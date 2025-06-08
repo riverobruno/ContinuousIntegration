@@ -10,9 +10,8 @@ on:
 
 jobs:
   build:
-
+    name: Test y Build
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python 3.13
@@ -27,3 +26,24 @@ jobs:
 
     - name: Test y build con Poetry en tox
       run: poetry run tox
+
+    - name: subir el binario
+      uses: actions/upload-artifact@v3
+      with:
+        name: python-package
+        path: dist/*.whl
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: descargar el binario
+      uses: actions/download-artifact@v3
+      with:
+        name: python-package
+        
+    - name: Despliegue en Render
+      uses: johnbeynon/render-deploy-action@v0.0.8
+      with:
+          service-id: ${{ secrets.SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
