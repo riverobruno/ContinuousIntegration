@@ -27,23 +27,36 @@ jobs:
     - name: Test y build con Poetry en tox
       run: poetry run tox
 
-    - name: subir el binario
-      uses: actions/upload-artifact@v4
-      with:
-        name: python-package
-        path: dist/*.whl
-
   deploy:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - name: descargar el binario
-      uses: actions/download-artifact@v4 #recibe el wheel desde el otro trabajo
-      with:
-        name: python-package
-        path: dist/
     - name: Despliegue en Render
       uses: johnbeynon/render-deploy-action@v0.0.8
       with:
           service-id: ${{ secrets.SERVICE_ID }}
           api-key: ${{ secrets.RENDER_API_KEY }}
+  
+  notify:
+    name: Send Notifications
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Slack notifica éxito
+        if: ${{ needs.build.result == 'success' && needs.deploy.result == 'success' }}
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: "✅ El pipeline de CI/CD se completó con éxito!"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Slack notifica fracaso
+        if: ${{ needs.build.result == 'failure' || needs.deploy.result == 'failure' }}
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: "❌ El pipeline de CI/CD falló. Por favor, revisá los logs."
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
