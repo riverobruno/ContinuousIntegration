@@ -31,7 +31,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: python-package
-        path: dist/*.whl
+        path: dist/
 
   deploy:
     needs: build
@@ -41,7 +41,8 @@ jobs:
       uses: actions/download-artifact@v4 #recibe el wheel desde el otro trabajo
       with:
         name: python-package
-        
+        path: dist/
+
     - name: Despliegue en Render
       uses: johnbeynon/render-deploy-action@v0.0.8
       with:
