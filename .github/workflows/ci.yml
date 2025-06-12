@@ -94,7 +94,7 @@ jobs:
     runs-on: [ubuntu-latest]
     if: ${{ needs.build.result == 'success' && needs.deploy.result == 'success' }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Extract Jira Issue
         id: extract
         run: |
@@ -107,14 +107,17 @@ jobs:
         id: transitions
         if: steps.extract.outputs.issue != ''
         run: |
-          echo "no me molestes"
+          JIRA_URL="${{secrets.JIRA_URL}}"
+          JIRA_EMAIL="${{ secrets.JIRA_EMAIL }}"
+          JIRA_TOKEN="${{ secrets.TOKEN_API_JIRA }}"
           ISSUE_KEY="${{ steps.extract.outputs.issue }}"
           
           # Obtener transiciones disponibles
-          RESPONSE=$(curl -s -u "${{ secrets.JIRA_EMAIL }}:${{ secrets.TOKEN_API_JIRA }}" \
+          RESPONSE=$(curl -s -u "$JIRA_EMAIL:$JIRA_TOKEN" \
             -H "Accept: application/json" \
-            "${{secrets.JIRA_URL}}/rest/api/2/issue/$ISSUE_KEY/transitions")
-          
+            "$JIRA_URL/rest/api/2/issue/$ISSUE_KEY/transitions")
+          echo "$RESPONSE"
+          exit 0
           # Extraer IDs de transiciones
           IN_PROGRESS_ID=$(echo $RESPONSE | jq -r '.transitions[] | select(.name=="En curso") | .id')
           DONE_ID=$(echo $RESPONSE | jq -r '.transitions[] | select(.name=="Listo") | .id')
