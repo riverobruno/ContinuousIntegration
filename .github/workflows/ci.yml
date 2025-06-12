@@ -94,7 +94,6 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ needs.build.result == 'success' && needs.deploy.result == 'success' }}
     steps:
-      - uses: actions/checkout@v4
       - name: Extraer la ID de la actividad
         id: extract
         run: |
