@@ -135,7 +135,6 @@ jobs:
           ISSUE_KEY: ${{ steps.extract.outputs.issue }}
           TRANSITION_ID: ${{ steps.transitions.outputs.in_progress_id }}
         run: |
-          
           curl -s -u "$JIRA_EMAIL:$JIRA_TOKEN" \
             -X POST \
             -H "Content-Type: application/json" \
