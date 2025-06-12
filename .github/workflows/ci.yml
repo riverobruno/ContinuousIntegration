@@ -89,13 +89,13 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         
-  update-jira:
+  actualizar-jira:
     needs: [build,deploy]
     runs-on: ubuntu-latest
     if: ${{ needs.build.result == 'success' && needs.deploy.result == 'success' }}
     steps:
       - uses: actions/checkout@v4
-      - name: Extract Jira Issue
+      - name: Extraer la ID de la actividad
         id: extract
         run: |
           COMMIT_MSG="${{ github.event.head_commit.message }}"
@@ -103,7 +103,7 @@ jobs:
             echo "issue=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Get Jira Transitions
+      - name: Obtener transiciones
         id: transitions
         
         if: steps.extract.outputs.issue != ''
@@ -126,32 +126,33 @@ jobs:
           echo "done_id=$DONE_ID" >> $GITHUB_OUTPUT
 
 
-      - name: Update Jira Issue to In Progress
+      - name: Pasar a En curso
         if: contains(github.event.head_commit.message, 'Iniciando') || contains(github.event.head_commit.message, 'Iniciar')
+        env: 
+          JIRA_URL: ${{secrets.JIRA_URL}}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.TOKEN_API_JIRA }}
+          ISSUE_KEY: ${{ steps.extract.outputs.issue }}
+          TRANSITION_ID: ${{ steps.transitions.outputs.in_progress_id }}
         run: |
-          JIRA_URL="${{ secrets.JIRA_URL }}"
-          JIRA_EMAIL="${{ secrets.JIRA_EMAIL }}"
-          JIRA_TOKEN="${{ secrets.JIRA_API_TOKEN }}"
-          ISSUE_KEY="${{ steps.extract.outputs.issue }}"
-          TRANSITION_ID="${{ steps.transitions.outputs.in_progress_id }}"
           
           curl -s -u "$JIRA_EMAIL:$JIRA_TOKEN" \
             -X POST \
             -H "Content-Type: application/json" \
             -d "{\"transition\":{\"id\":\"$TRANSITION_ID\"}}" \
-            "$JIRA_URL/rest/api/2/issue/$ISSUE_KEY/transitions"
+            "https://$JIRA_URL/rest/api/2/issue/$ISSUE_KEY/transitions"
 
-      - name: Update Jira Issue to Done
+      - name: Pasar a Listo
         if: contains(github.event.head_commit.message, 'Completando') || contains(github.event.head_commit.message, 'Completar') || contains(github.event.head_commit.message, 'Finalizado') || contains(github.event.head_commit.message, 'Finalizar')
+        env: 
+          JIRA_URL: ${{secrets.JIRA_URL}}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.TOKEN_API_JIRA }}
+          ISSUE_KEY: ${{ steps.extract.outputs.issue }}
+          TRANSITION_ID: ${{ steps.transitions.outputs.done_id }}
         run: |
-          JIRA_URL="${{ secrets.JIRA_URL }}"
-          JIRA_EMAIL="${{ secrets.JIRA_EMAIL }}"
-          JIRA_TOKEN="${{ secrets.JIRA_API_TOKEN }}"
-          ISSUE_KEY="${{ steps.extract.outputs.issue }}"
-          TRANSITION_ID="${{ steps.transitions.outputs.done_id }}"
-          
           curl -s -u "$JIRA_EMAIL:$JIRA_TOKEN" \
             -X POST \
             -H "Content-Type: application/json" \
             -d "{\"transition\":{\"id\":\"$TRANSITION_ID\"}}" \
-            "$JIRA_URL/rest/api/2
+            "https://$JIRA_URL/rest/api/2/issue/$ISSUE_KEY/transitions"
