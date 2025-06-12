@@ -46,7 +46,7 @@ jobs:
             "https://api.render.com/v1/services/$SERVICE_ID/deploys")
           DEPLOY_ID=$(echo "$DEPLOYS_RESPONSE" | jq -r '.[0].deploy.id')
 
-          echo "Deploy ID: $DEPLOY_ID"
+          
           # 2. Esperar cambio de estado 
           for i in {1..30}; do
             DEPLOY_INFO=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
@@ -122,8 +122,8 @@ jobs:
           IN_PROGRESS_ID=$(echo "$RESPONSE" | jq -r '.transitions[] | select(.name=="En curso") | .id')
           DONE_ID=$(echo "$RESPONSE" | jq -r '.transitions[] | select(.name=="Listo") | .id')
 
-          echo "in_progress_id=$IN_PROGRESS_ID" >> $GITHUB_OUTPUT
-          echo "done_id=$DONE_ID" >> $GITHUB_OUTPUT
+          echo "in_progress_id=$IN_PROGRESS_ID" >> "$GITHUB_OUTPUT"
+          echo "done_id=$DONE_ID" >> "$GITHUB_OUTPUT"
 
       - name: Update Jira Issue to In Progress
         if: contains(github.event.head_commit.message, 'Iniciando') || contains(github.event.head_commit.message, 'Iniciar')
