@@ -94,12 +94,14 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ needs.build.result == 'success' && needs.deploy.result == 'success' }}
     steps:
+      - uses: actions/checkout@v4
       - name: Extract Jira Issue
         id: extraer_issue
         run: |
           COMMIT_MSG="${{ github.event.head_commit.message }}"
           if [[ $COMMIT_MSG =~ ([A-Z]+-[0-9]+) ]]; then
             echo "issue=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+            echo "$ISSUE"
           fi
 
       - name: Update Jira Issue
