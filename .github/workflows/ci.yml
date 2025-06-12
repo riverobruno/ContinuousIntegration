@@ -61,10 +61,10 @@ jobs:
               echo "❌ Falló: $CURRENT_STATUS"
               exit 1
             fi
-            
+            echo "esperando despliegue..."
             sleep 10
           done
-          echo "⌛ Timeout: No cambió a estado final en 5 minutos"
+          echo "Timeout: No cambió a estado final en 5 minutos"
           exit 1
 
 
