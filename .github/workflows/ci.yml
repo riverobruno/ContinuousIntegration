@@ -47,7 +47,7 @@ jobs:
           DEPLOY_ID=$(echo "$DEPLOYS_RESPONSE" | jq -r '.[0].deploy.id')
 
           echo "Deploy ID: $DEPLOY_ID"
-          echo "Estado inicial: $INITIAL_STATUS"
+          
 
           # 2. Esperar cambio de estado 
           for i in {1..30}; do
