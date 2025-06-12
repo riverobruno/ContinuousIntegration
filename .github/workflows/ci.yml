@@ -91,7 +91,7 @@ jobs:
         
   update-jira:
     needs: [build,deploy]
-    runs-on: [ubuntu-latest]
+    runs-on: ubuntu-latest
     if: ${{ needs.build.result == 'success' && needs.deploy.result == 'success' }}
     steps:
       - uses: actions/checkout@v4
@@ -105,12 +105,15 @@ jobs:
 
       - name: Get Jira Transitions
         id: transitions
+        
         if: steps.extract.outputs.issue != ''
+        env: 
+          JIRA_URL: ${{secrets.JIRA_URL}}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.TOKEN_API_JIRA }}
+          ISSUE_KEY: ${{ steps.extract.outputs.issue }}
         run: |
-          JIRA_URL="${{secrets.JIRA_URL}}"
-          JIRA_EMAIL="${{ secrets.JIRA_EMAIL }}"
-          JIRA_TOKEN="${{ secrets.TOKEN_API_JIRA }}"
-          ISSUE_KEY="${{ steps.extract.outputs.issue }}"
+          
           
           # Obtener transiciones disponibles
           RESPONSE=$(curl -s -u "$JIRA_EMAIL:$JIRA_TOKEN" \
