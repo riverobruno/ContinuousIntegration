@@ -44,7 +44,7 @@ jobs:
           # 1. Obtener el último deploy
           DEPLOYS_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
             "https://api.render.com/v1/services/$SERVICE_ID/deploys")
-          DEPLOY_ID=$(echo "$DEPLOYS_RESPONSE" | jq -r '.[0].id')
+          DEPLOY_ID=$(echo "$DEPLOYS_RESPONSE" | jq -r '.[0].deploy.id')
 
           echo "Deploy ID: $DEPLOY_ID"
           echo "Estado inicial: $INITIAL_STATUS"
