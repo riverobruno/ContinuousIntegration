@@ -99,7 +99,7 @@ jobs:
         run: |
           COMMIT_MSG="${{ github.event.head_commit.message }}"
           if [[ $COMMIT_MSG =~ ([A-Z]+-[0-9]+) ]]; then
-            ISSUE=${BASH_REMATCH[1]}
+            ISSUE=${BASH_REMATCH[0]}
           else
             exit 1
           fi
