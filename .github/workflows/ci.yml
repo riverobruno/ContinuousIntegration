@@ -107,7 +107,7 @@ jobs:
         id: transitions
         if: steps.extract.outputs.issue != ''
         run: |
-  
+          echo "no me molestes"
           ISSUE_KEY="${{ steps.extract.outputs.issue }}"
           
           # Obtener transiciones disponibles
