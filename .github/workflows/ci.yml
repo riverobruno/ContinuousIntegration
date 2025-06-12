@@ -36,9 +36,36 @@ jobs:
       with:
           service-id: ${{ secrets.SERVICE_ID }}
           api-key: ${{ secrets.RENDER_API_KEY }}
-  
+
+    - name: Esperar a que Render esté live o falle
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        SERVICE_ID: ${{ secrets.SERVICE_ID }}
+      run: |
+        echo "Esperando a que el servicio esté en estado final (live o failed)..."
+        for i in {1..30}; do
+          STATUS=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+            https://api.render.com/v1/services/$SERVICE_ID | jq -r '.service.status')
+          echo "Estado actual: $STATUS"
+
+          if [ "$STATUS" = "live" ]; then
+            echo "Desplegado con éxito ✅"
+            exit 0
+          elif [[ "$STATUS" =~ ^(build_failed|failed|deactivated)$ ]]; then
+            echo "El despliegue falló ❌"
+            exit 1
+          fi
+          sleep 10
+        done
+
+        echo "Timeout: el servicio no alcanzó un estado final después de 5 minutos"
+        exit 1
+
+
+
+
   notify:
-    name: Send Notifications
+    name: Enviar notificaciones
     needs: [build, deploy]
     runs-on: ubuntu-latest
     if: always()
@@ -60,3 +87,4 @@ jobs:
           text: "❌ El pipeline de CI/CD falló. Por favor, revisá los logs."
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        
