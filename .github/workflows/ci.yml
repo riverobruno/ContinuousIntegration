@@ -36,63 +36,36 @@ jobs:
       with:
           service-id: ${{ secrets.SERVICE_ID }}
           api-key: ${{ secrets.RENDER_API_KEY }}
-    - name: Esperar estado final (live/failed)
+    - name: Esperar estado final
       env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           SERVICE_ID: ${{ secrets.SERVICE_ID }}
       run: |
-          echo "Obteniendo ID del último deploy..."
-          DEPLOY_ID=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
-            "https://api.render.com/v1/services/$SERVICE_ID/deploys" | jq -r '.[0].id')
-          echo "Esperando a que el deploy $DEPLOY_ID termine..."
-          for i in {1..30}; do  # 30 intentos (5 minutos máximo)
-            STATUS=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
-              "https://api.render.com/v1/deploys/$DEPLOY_ID" | jq -r '.status')
+          # 1. Obtener el último deploy
+          DEPLOYS_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+            "https://api.render.com/v1/services/$SERVICE_ID/deploys")
+          DEPLOY_ID=$(echo "$DEPLOYS_RESPONSE" | jq -r '.[0].id')
 
-            echo "Estado actual: $STATUS"
-            if [ "$STATUS" = "live" ]; then
+          echo "Deploy ID: $DEPLOY_ID"
+          echo "Estado inicial: $INITIAL_STATUS"
+
+          # 2. Esperar cambio de estado 
+          for i in {1..30}; do
+            DEPLOY_INFO=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+              "https://api.render.com/v1/services/$SERVICE_ID/deploys/$DEPLOY_ID")
+            CURRENT_STATUS=$(echo "$DEPLOY_INFO" | jq -r '.status')
+            if [ "$CURRENT_STATUS" = "live" ]; then
               echo "✅ Despliegue exitoso"
-              echo "status=success" >> $GITHUB_OUTPUT
               exit 0
-            elif [[ "$STATUS" =~ ^(failed|canceled|crashed)$ ]]; then
-              echo "❌ Falló: $STATUS"
-              echo "status=failure" >> $GITHUB_OUTPUT
+            elif [[ "$CURRENT_STATUS" =~ ^(failed|canceled|crashed)$ ]]; then
+              echo "❌ Falló: $CURRENT_STATUS"
               exit 1
             fi
-            sleep 10  # Espera 10 segundos entre intentos
+            
+            sleep 10
           done
-
-    - name: Esperar a que el último deploy esté live o falle
-      env:
-        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-        SERVICE_ID: ${{ secrets.SERVICE_ID }}
-      run: |
-        echo "Obteniendo el último deploy..."
-        LATEST_DEPLOY=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
-          https://api.render.com/v1/services/$SERVICE_ID/deploys | jq '.[0]')
-        DEPLOY_ID=$(echo "$LATEST_DEPLOY" | jq -r '.id')
-
-        echo "Esperando a que el deploy $DEPLOY_ID esté en estado final (live o failed)..."
-
-        for i in {1..30}; do
-          STATUS=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
-            https://api.render.com/v1/deploys/$DEPLOY_ID | jq -r '.status')
-
-          echo "Estado actual del deploy: $STATUS"
-
-          if [ "$STATUS" = "live" ]; then
-            echo "Despliegue exitoso ✅"
-            exit 0
-          elif [[ "$STATUS" =~ ^(failed|canceled|crashed)$ ]]; then
-            echo "El despliegue falló ❌"
-            exit 1
-          fi
-
-          sleep 10
-        done
-
-        echo "Timeout: el deploy no alcanzó un estado final después de 5 minutos"
-        exit 1
+          echo "⌛ Timeout: No cambió a estado final en 5 minutos"
+          exit 1
 
 
 
