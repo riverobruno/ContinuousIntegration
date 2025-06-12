@@ -89,7 +89,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         
-update-jira:
+  update-jira:
     needs: [build,deploy]
     runs-on: [ubuntu-latest]
     if: ${{ needs.build.result == 'success' && needs.deploy.result == 'success' }}
