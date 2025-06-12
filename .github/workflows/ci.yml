@@ -89,3 +89,54 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         
+  actualizar-jira:
+    needs: [build,deploy]
+    runs-on: ubuntu-latest
+    if: ${{ needs.build.result == 'success' && needs.deploy.result == 'success' }}
+    steps:
+      - name: Extract Jira Issue
+        id: extraer_issue
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          if [[ $COMMIT_MSG =~ ([A-Z]+-[0-9]+) ]]; then
+            echo "issue=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update Jira Issue
+        if: steps.extraer_issue.outputs.issue != ''
+        run: |
+          ISSUE="${{ steps.extraer_issue.outputs.issue }}"
+          
+          # Obtener transiciones disponibles
+          TRANSITIONS_RESPONSE=$(curl -s -u "${{ secrets.jira_email }}:${{ secrets.token_api_jira }}" \
+            "${{ secrets.jira_url }}/rest/api/2/issue/$ISSUE/transitions" \
+            -H "Accept: application/json")
+          
+          # Determinar la transición basada en el mensaje del commit
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          TRANSITION_NAME=""
+          
+          if [[ "$COMMIT_MSG" =~ (Iniciando|Iniciar) ]]; then
+            TRANSITION_NAME="En curso"
+          elif [[ "$COMMIT_MSG" =~ (Completando|Completar|Finalizado|Finalizar) ]]; then
+            TRANSITION_NAME="Listo"
+          fi
+          
+          if [ -z "$TRANSITION_NAME" ]; then
+            exit 0
+          fi
+          
+          # Obtengo el ID de la transición
+          TRANSITION_ID=$(echo "$TRANSITIONS_RESPONSE" | jq -r --arg name "$TRANSITION_NAME" '.transitions[] | select(.name==$name) | .id')
+          
+          if [ -z "$TRANSITION_ID" ]; then
+            exit 1
+          fi
+          
+          # Ejecutar la transición
+          curl -s -X POST \
+            -u "${{ secrets.jira_email }}:${{ secrets.token_api_jira }}" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            "${{ secrets.jira_url }}/rest/api/2/issue/$ISSUE/transitions" \
+            -d "{\"transition\":{\"id\":\"$TRANSITION_ID\"}}"

@@ -1,6 +1,6 @@
 from flask import Flask
 app = Flask(__name__)
-defensa = ["Blanco", "Rojo", "Costa" ,"Frank Fabra"]
+defensa = ["Blanco", "Rojo", "Costa" ,"Blondel"]
 @app.route('/')
 
 def mostrar_defensa():
