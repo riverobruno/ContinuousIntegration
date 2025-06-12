@@ -98,7 +98,7 @@ jobs:
         id: extract
         run: |
           COMMIT_MSG="${{ github.event.head_commit.message }}"
-          if [[ $COMMIT_MSG =~ ([A-Z]+-[0-9]+) ]]; then
+          if [[ $COMMIT_MSG =~ ([A-Z]+)-([0-9]+) ]]; then
             ISSUE=${BASH_REMATCH[0]}
           else
             exit 1
