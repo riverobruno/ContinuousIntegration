@@ -119,13 +119,13 @@ jobs:
           "$JIRA_URL/rest/api/2/issue/$ISSUE_KEY/transitions")
 
           # Extraer IDs de transiciones
-          IN_PROGRESS_ID=$(echo "$RESPONSE" | jq -r '.transitions[] | select(.name=="En curso") | .id')
-          DONE_ID=$(echo "$RESPONSE" | jq -r '.transitions[] | select(.name=="Listo") | .id')
+          IN_PROGRESS_ID=$(echo "$RESPONSE" | jq  '.transitions[] | select(.name=="En curso") | .id')
+          DONE_ID=$(echo "$RESPONSE" | jq  '.transitions[] | select(.name=="Listo") | .id')
 
           echo "in_progress_id=$IN_PROGRESS_ID" >> "$GITHUB_OUTPUT"
           echo "done_id=$DONE_ID" >> "$GITHUB_OUTPUT"
 
-          
+
       - name: Update Jira Issue to In Progress
         if: contains(github.event.head_commit.message, 'Iniciando') || contains(github.event.head_commit.message, 'Iniciar')
         run: |
