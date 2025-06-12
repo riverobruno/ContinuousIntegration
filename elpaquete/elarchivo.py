@@ -4,7 +4,7 @@ defensa = ["Blanco", "Rojo", "Costa" ,"Blondel"]
 @app.route('/')
 
 def mostrar_defensa():
-    eltexto = "<h3>Bien ahí, entonces serán:</h3>"
+    eltexto = "<h3>Bien ahí, entonces serán a:</h3>"
     eltexto += "<ul>"
     for nombre in defensa:
         eltexto += f"<li>{nombre}</li>"
