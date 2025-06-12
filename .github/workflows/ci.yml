@@ -125,6 +125,7 @@ jobs:
           echo "in_progress_id=$IN_PROGRESS_ID" >> "$GITHUB_OUTPUT"
           echo "done_id=$DONE_ID" >> "$GITHUB_OUTPUT"
 
+          
       - name: Update Jira Issue to In Progress
         if: contains(github.event.head_commit.message, 'Iniciando') || contains(github.event.head_commit.message, 'Iniciar')
         run: |
