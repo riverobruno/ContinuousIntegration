@@ -107,7 +107,7 @@ jobs:
         id: transitions
         if: steps.extract.outputs.issue != ''
         run: |
-          JIRA_URL="${{ secrets.JIRA_URL }}"
+          JIRA_URL="${{secrets.JIRA_URL}}"
           JIRA_EMAIL="${{ secrets.JIRA_EMAIL }}"
           JIRA_TOKEN="${{ secrets.TOKEN_API_JIRA }}"
           ISSUE_KEY="${{ steps.extract.outputs.issue }}"
