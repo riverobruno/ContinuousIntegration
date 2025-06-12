@@ -89,50 +89,67 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         
-  actualizar-jira:
+update-jira:
     needs: [build,deploy]
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest]
     if: ${{ needs.build.result == 'success' && needs.deploy.result == 'success' }}
     steps:
+      - uses: actions/checkout@v4
       - name: Extract Jira Issue
         id: extract
         run: |
           COMMIT_MSG="${{ github.event.head_commit.message }}"
-          if [[ $COMMIT_MSG =~ ([A-Z]+)-([0-9]+) ]]; then
-            ISSUE=${BASH_REMATCH[0]}
-          else
-            exit 1
+          if [[ $COMMIT_MSG =~ ([A-Z]+-[0-9]+) ]]; then
+            echo "issue=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
           fi
+
+      - name: Get Jira Transitions
+        id: transitions
+        if: steps.extract.outputs.issue != ''
+        run: |
+          JIRA_URL="${{ secrets.JIRA_URL }}"
+          JIRA_EMAIL="${{ secrets.JIRA_EMAIL }}"
+          JIRA_TOKEN="${{ secrets.TOKEN_API_JIRA }}"
+          ISSUE_KEY="${{ steps.extract.outputs.issue }}"
+          
           # Obtener transiciones disponibles
-          TRANSITIONS_RESPONSE=$(curl -s -u "${{ secrets.jira_email }}:${{ secrets.token_api_jira }}" \
-            "${{ secrets.jira_url }}/rest/api/2/issue/$ISSUE/transitions" \
-            -H "Accept: application/json")
-          
-          # Determinar la transición basada en el mensaje del commit
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
-          TRANSITION_NAME=""
-          
-          if [[ "$COMMIT_MSG" =~ (Iniciando|Iniciar) ]]; then
-            TRANSITION_NAME="En curso"
-          elif [[ "$COMMIT_MSG" =~ (Completando|Completar|Finalizado|Finalizar) ]]; then
-            TRANSITION_NAME="Listo"
-          fi
-          
-          if [ -z "$TRANSITION_NAME" ]; then
-            exit 0
-          fi
-          
-          # Obtengo el ID de la transición
-          TRANSITION_ID=$(echo "$TRANSITIONS_RESPONSE" | jq -r --arg name "$TRANSITION_NAME" '.transitions[] | select(.name==$name) | .id')
-          
-          if [ -z "$TRANSITION_ID" ]; then
-            exit 1
-          fi
-          
-          # Ejecutar la transición
-          curl -s -X POST \
-            -u "${{ secrets.jira_email }}:${{ secrets.token_api_jira }}" \
-            -H "Content-Type: application/json" \
+          RESPONSE=$(curl -s -u "$JIRA_EMAIL:$JIRA_TOKEN" \
             -H "Accept: application/json" \
-            "${{ secrets.jira_url }}/rest/api/2/issue/$ISSUE/transitions" \
-            -d "{\"transition\":{\"id\":\"$TRANSITION_ID\"}}"
+            "$JIRA_URL/rest/api/2/issue/$ISSUE_KEY/transitions")
+          
+          # Extraer IDs de transiciones
+          IN_PROGRESS_ID=$(echo $RESPONSE | jq -r '.transitions[] | select(.name=="En curso") | .id')
+          DONE_ID=$(echo $RESPONSE | jq -r '.transitions[] | select(.name=="Listo") | .id')
+          
+          echo "in_progress_id=$IN_PROGRESS_ID" >> $GITHUB_OUTPUT
+          echo "done_id=$DONE_ID" >> $GITHUB_OUTPUT
+
+      - name: Update Jira Issue to In Progress
+        if: contains(github.event.head_commit.message, 'Iniciando') || contains(github.event.head_commit.message, 'Iniciar')
+        run: |
+          JIRA_URL="${{ secrets.JIRA_URL }}"
+          JIRA_EMAIL="${{ secrets.JIRA_EMAIL }}"
+          JIRA_TOKEN="${{ secrets.JIRA_API_TOKEN }}"
+          ISSUE_KEY="${{ steps.extract.outputs.issue }}"
+          TRANSITION_ID="${{ steps.transitions.outputs.in_progress_id }}"
+          
+          curl -s -u "$JIRA_EMAIL:$JIRA_TOKEN" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"transition\":{\"id\":\"$TRANSITION_ID\"}}" \
+            "$JIRA_URL/rest/api/2/issue/$ISSUE_KEY/transitions"
+
+      - name: Update Jira Issue to Done
+        if: contains(github.event.head_commit.message, 'Completando') || contains(github.event.head_commit.message, 'Completar') || contains(github.event.head_commit.message, 'Finalizado') || contains(github.event.head_commit.message, 'Finalizar')
+        run: |
+          JIRA_URL="${{ secrets.JIRA_URL }}"
+          JIRA_EMAIL="${{ secrets.JIRA_EMAIL }}"
+          JIRA_TOKEN="${{ secrets.JIRA_API_TOKEN }}"
+          ISSUE_KEY="${{ steps.extract.outputs.issue }}"
+          TRANSITION_ID="${{ steps.transitions.outputs.done_id }}"
+          
+          curl -s -u "$JIRA_EMAIL:$JIRA_TOKEN" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"transition\":{\"id\":\"$TRANSITION_ID\"}}" \
+            "$JIRA_URL/rest/api/2
