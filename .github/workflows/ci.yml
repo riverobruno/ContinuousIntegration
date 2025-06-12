@@ -94,21 +94,15 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ needs.build.result == 'success' && needs.deploy.result == 'success' }}
     steps:
-      - uses: actions/checkout@v4
       - name: Extract Jira Issue
-        id: extraer_issue
+        id: extract
         run: |
           COMMIT_MSG="${{ github.event.head_commit.message }}"
           if [[ $COMMIT_MSG =~ ([A-Z]+-[0-9]+) ]]; then
-            echo "issue=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
-            echo "$ISSUE"
+            issue=${BASH_REMATCH[1]} 
+          elif
+            exit 1
           fi
-
-      - name: Update Jira Issue
-        if: steps.extraer_issue.outputs.issue != ''
-        run: |
-          ISSUE="${{ steps.extraer_issue.outputs.issue }}"
-          
           # Obtener transiciones disponibles
           TRANSITIONS_RESPONSE=$(curl -s -u "${{ secrets.jira_email }}:${{ secrets.token_api_jira }}" \
             "${{ secrets.jira_url }}/rest/api/2/issue/$ISSUE/transitions" \
